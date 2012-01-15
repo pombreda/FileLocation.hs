@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 -- | see Debug.FileLocation module for more definitions
 module FileLocation
-  ( err, undef, fromJst, fromRht
+  ( err, err', undef, fromJst, fromRht
   , debug, debugM, debugMsg, debugMsgIf, dbg, dbgMsg, trc, ltrace, ltraceM, strace
   , locationToString
   , thrwIO, thrwsIO
@@ -23,7 +23,20 @@ err :: String -> Q Exp
 err str = do
   loc <- qLocation
   let prefix = (locationToString loc) ++ " "
-  [|error (prefix ++ str)|]
+  [|errorWithLocation prefix str|]
+
+-- | like 'err', but the message can be a runtime value
+--
+-- > $err' ("msg " ++ show (4 + 5))
+-- > main:Main main.hs:4:10 msg 9
+err' :: Q Exp
+err' = do
+  loc <- qLocation
+  let prefix = (locationToString loc) ++ " "
+  [|errorWithLocation prefix|]
+
+errorWithLocation :: String -> String -> a
+errorWithLocation locPrefix msg = error (locPrefix ++ msg)
 
 -- | like Prelude.undefined, but gives the file location
 -- use trace to output the location.
